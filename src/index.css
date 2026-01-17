@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  @apply bg-white dark:bg-black transition-colors duration-200;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-gray-900 bg-white dark:bg-black dark:text-white transition-colors duration-200;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .center-expand-card {
+    @apply relative overflow-hidden transition-all duration-300 bg-white dark:bg-gray-900;
+  }
+
+  .center-expand-card::before {
+    content: '';
+    @apply absolute inset-0 w-0 h-full bg-primary-400/50 transition-all duration-500 ease-out left-1/2 -translate-x-1/2 -z-10;
+  }
+
+  .center-expand-card:hover::before {
+    @apply w-full;
+  }
+
+  .center-expand-card:hover {
+    @apply border-primary-400;
+  }
+
+  .center-expand-card>* {
+    @apply relative z-10;
+  }
+}
