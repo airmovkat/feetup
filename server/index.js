@@ -19,17 +19,45 @@ app.get('/', (req, res) => res.send('FeetUp Backend Running 🚀 (MongoDB)'));
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => res.json({}));
 
 // MongoDB Connection
+// MongoDB Connection
 const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/feetup_db';
 
-mongoose.connect(MONGODB_URI)
-    .then(() => {
-        console.log("✅✅✅ Connected to MongoDB Database Successfully! ✅✅✅");
-        console.log("Connection Host:", mongoose.connection.host);
-    })
-    .catch(err => {
+// Serverless Connection Pattern
+let cachedConnection = null;
+
+const connectDB = async () => {
+    if (cachedConnection) {
+        return cachedConnection;
+    }
+
+    try {
+        const conn = await mongoose.connect(MONGODB_URI, {
+            serverSelectionTimeoutMS: 5000, // Fail fast (5s) instead of hanging
+            socketTimeoutMS: 45000, // Close sockets after 45s
+        });
+        cachedConnection = conn;
+        console.log("✅✅✅ New MongoDB Connection Established! ✅✅✅");
+        return conn;
+    } catch (err) {
         console.error("❌❌❌ MongoDB Connection Failed ❌❌:", err.message);
-        console.error("Active URI:", MONGODB_URI.replace(/:([^:@]+)@/, ':****@')); // Hide password
-    });
+        throw err;
+    }
+};
+
+// Initiate connection properly
+connectDB();
+
+// Ensure connection is active for every request (Middleware)
+app.use(async (req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+        try {
+            await connectDB();
+        } catch (err) {
+            return res.status(500).json({ error: 'Database connection failed' });
+        }
+    }
+    next();
+});
 
 // Stats Endpoint
 app.get('/api/stats/counts', async (req, res) => {
